@@ -45,7 +45,8 @@ Bot.on(Events.VoiceStateUpdate, async (oldState, newState) => {
         (channel) =>
           channel.type === Discord.ChannelType.GuildVoice &&
           channel.members.size > 0 &&
-          channel.id !== voiceFromId
+          channel.id !== voiceFromId &&
+          channel.id !== guild.afkChannelId
       );
     const victim = guild?.members.cache.get(victimId);
 
