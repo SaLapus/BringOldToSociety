@@ -19,19 +19,24 @@ const Bot = new Discord.Client({
 
 const guildId = process.env.GUILD_ID as string;
 const voiceFromId = process.env.VOICE_FROM_ID as string;
+const channelToAlert = process.env.CHANNEL_TO_ALERT as string;
 const victimId = process.env.VICTIM_ID as string;
 
 Bot.on(Events.ClientReady, async (client) => {
-  console.log("STARTED SEARCHING SANYA");
+  const guild = Bot.guilds.cache.get(guildId);
+  const members = await guild?.members.fetch();
+  const victim = members?.get(victimId);
+  debugger;
+  console.log("STARTED SEARCHING ", victim?.displayName);
 });
 
 Bot.on(Events.VoiceStateUpdate, async (oldState, newState) => {
   if (newState.member && newState.member?.id !== victimId) return;
 
-  console.log("FIND VICTIM MOVEMENT");
+  // console.log("FIND VICTIM MOVEMENT");
 
   if (newState.channelId === voiceFromId) {
-    console.log("GOT VICTIM INTO TRAP");
+    // console.log("GOT VICTIM INTO TRAP");
 
     const guild = Bot.guilds.cache.get(guildId);
     const voiceTo = guild?.channels.cache
@@ -44,10 +49,14 @@ Bot.on(Events.VoiceStateUpdate, async (oldState, newState) => {
       );
     const victim = guild?.members.cache.get(victimId);
 
-    console.log("MOVE VICTIM AWAY");
+    // console.log("MOVE VICTIM AWAY");
 
-    if (voiceTo) await victim?.voice.setChannel(voiceTo.id);
+    if (victim && voiceTo) {
+      await victim.voice.setChannel(voiceTo.id);
+      const channel = guild?.channels.cache.get(channelToAlert);
+      (channel as Discord.TextChannel).send(`<@${victim.id}>, мы не дадим тебе умереть одному.`);
+    }
   }
 });
 
-Bot.login("NDY4NTA3NTA0NTE5ODA2OTk2.W0z5nQ.3htfWvyZGw1RGD4EVaPwcWVcK40");
+Bot.login(process.env.BOT_TOKEN as string);
