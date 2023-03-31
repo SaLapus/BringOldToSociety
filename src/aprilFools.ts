@@ -20,15 +20,18 @@ const Bot = new Discord.Client({
 });
 
 const guildId = process.env.GUILD_ID!;
+
+const untouchableCategoryId = process.env.UNTOUCHABLE_CATEGORY_ID!;
+
 const channelTo = process.env.CHANNEL_TO!;
 const messageChannel = process.env.MESSAGE_CHANNEL!;
-
-const guildLog = process.env.GUILD_LOG!;
 const channelLog = process.env.CHANNEL_LOG!;
 
-const victimsTimeoutQueue = new Set<string>();
+const byNravId = process.env.BYNRAV_ID!;
 
 const escapesMap = JSON.parse(fs.readFileSync("./data/escapesStats.json", "utf-8"));
+
+const victimsTimeoutQueue = new Set<string>();
 const escapesStatistics = new Map<string, number>(escapesMap);
 
 setInterval(
@@ -37,22 +40,11 @@ setInterval(
   5 * 6_000
 );
 
-Bot.on(Events.ClientReady, async () => {
-  const toLog = Bot.channels.cache.get(channelLog);
-
-  const guild = Bot.guilds.cache.get(guildLog);
-  const emoji = guild?.emojis.cache.find((e) => e.name?.includes("Bee_Mad_Emote"));
-
-  debugger;
-
-  if (toLog?.type !== Discord.ChannelType.GuildText) return;
-
-  const message = await toLog.send(`мы не дадим тебе умереть одному! :Bee_Mad_Emote:`);
-});
+Bot.on(Events.ClientReady, async () => {});
 
 Bot.on(Events.MessageCreate, (message) => {
   if (Date.now() < 1680296400000) return;
-  if (message.guildId !== "426623216375693332") return;
+  if (message.guildId !== guildId) return;
   if (!message.content.startsWith("!escapes")) return;
 
   const guild = Bot.guilds.cache.get(guildId);
@@ -70,9 +62,10 @@ Bot.on(Events.MessageCreate, (message) => {
 
 Bot.on(Events.VoiceStateUpdate, async (oldState, newState) => {
   try {
-    // if (Date.now() < 1680296400000) return;
-    if (newState.guild.id !== "426623216375693332") return;
+    if (Date.now() < 1680296400000) return;
+    if (newState.guild.id !== guildId) return;
     if (!newState.channelId) return;
+    if (newState.channel?.parent?.id === untouchableCategoryId) return;
     if (oldState.channelId === newState.channelId) return;
 
     const victim = newState.member;
@@ -103,50 +96,57 @@ Bot.on(Events.VoiceStateUpdate, async (oldState, newState) => {
     victimsTimeoutQueue.add(victim.id);
     setTimeout(() => victimsTimeoutQueue.delete(victim.id), 5_000);
 
-    // const message = await (msgChannel as Discord.TextChannel).send(messageToSend);
-
-    const toLog = Bot.channels.cache.get(channelLog);
-
-    if (toLog?.type !== Discord.ChannelType.GuildText) return;
-
-    const message = await toLog.send(messageToSend);
+    const message = await (msgChannel as Discord.TextChannel).send(messageToSend);
 
     setTimeout(() => message.delete(), 2 * 60_000);
   } catch (e) {
     console.log(e);
     const toLog = Bot.channels.cache.get(channelLog);
-    if (toLog?.type === Discord.ChannelType.GuildText) {
-      toLog.send(e as string);
-    }
+    if (toLog?.type !== Discord.ChannelType.GuildText) return;
+    toLog.send(e as string);
   }
 });
 
+/**
+ *
+ * @param id - ID of user to reply
+ * @param escapes - Escapes from target channel to another
+ * @param membersInChannel - Count of members in target channel
+ * @returns {string}
+ */
 function chooseText(id: string, escapes: number, membersInChannel?: number): string {
   const getChoice = (texts: string[]) => texts[Math.floor(Math.random() * texts.length)];
   const emoji = (name: string) =>
     Bot.guilds.cache.get(guildId)?.emojis.cache.find((e) => e.name?.includes(name));
-    
+
   let texts: string[] = [];
 
   /**
-   * If there 4+ members in voice, there are 33% to send this messsage
+   * If there are 4+ members in voice, there are 33% to send this messsage
    */
   if (membersInChannel && membersInChannel > 3 && Math.floor(Math.random() * 9) > 5)
     return "Теперь я знаю, как себя чувствует килька в банке...";
 
   const mention = `<@${id}>`;
 
+  /**
+   * If user tryed escape to another voice channel N times
+   */
   if (escapes === 0)
     texts = [
-      `${mention}, нетушки`,
-      `${mention}, ты куда?`,
+      `${mention}, нетушки.`,
       `${mention} испарился!`,
       `${mention} пропал!`,
       `${mention} исчез!`,
       `${mention} наелся и спит!\n.\n.\n.\nЧто?..`,
     ];
   else if (escapes === 1)
-    texts = [`${mention}, не сбежишь`, `${mention}, даже не пытайся`, `${mention}, не-а`];
+    texts = [
+      `${mention}, не сбежишь.`,
+      `${mention}, даже не пытайся.`,
+      `${mention}, не-а.`,
+      `${mention}, ты куда?`,
+    ];
   else if (escapes === 2)
     texts = [
       `${mention}, а ты упертый!`,
@@ -155,26 +155,33 @@ function chooseText(id: string, escapes: number, membersInChannel?: number): str
     ];
   else if (escapes === 3)
     texts = [
-      `${mention}, в конце останется лишь один`,
+      `${mention}, в конце останется лишь один.`,
       `${mention}, ты либо необучаемый, либо старый.`,
     ];
   else
     texts = [
-      `${mention}, в конце останется лишь один`,
-      `${mention}, живой или мёртвый — ты пойдёшь со мной`,
-      `${mention}, ты либо необучаемый, либо старый. ${
-        id === "327480736829669386" ? `В твоем случае это одного и тоже.` : ``
-      }`,
+      `${mention}, в конце останется лишь один.`,
+      `${mention}, живой или мёртвый — ты пойдёшь со мной. ${emoji("Pepe_Gun")}`,
+      `${mention}, ты либо необучаемый, ${
+        id === byNravId
+          ? `либо старый. В твоем случае это одного и тоже.`
+          : `либо сегодня твой день.`
+      } ${emoji("Pepe_Clown")}`,
       `${mention}, ${
-        id === "327480736829669386"
-          ? `Эх, Саня, ты такой красивый... :heart:`
-          : `Привет, красавчик :heart:`
-      }`,
+        id === byNravId ? `эх, Саня, ты такой красивый...` : `привет, красавчик`
+      } ${emoji("Pepe_Gayshit")} `,
+      `${mention}, у тебя спина белая. ${emoji("Pepe_Cringe")}`,
     ];
 
-  if (id === "327480736829669386")
+  /**
+   * byNrav have always chance to get this message
+   */
+  if (id === byNravId)
     texts.push(`${mention}, мы не дадим тебе умереть одному! ${emoji("Pchela_Happy")}`);
 
+  /**
+   * Return random text from several variants
+   */
   return getChoice(texts);
 }
 
