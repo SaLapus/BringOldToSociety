@@ -2,7 +2,7 @@ import * as Discord from "discord.js";
 import { Events, GatewayIntentBits } from "discord.js";
 import * as dotenv from "dotenv";
 
-dotenv.config();
+dotenv.config({path: "./envs/old.env"});
 
 const Bot = new Discord.Client({
   intents: [
