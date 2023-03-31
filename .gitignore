@@ -1,4 +1,5 @@
-/.env
+/envs/*
+/data
 /.vscode
 /js
 /node_modules
