@@ -76,7 +76,7 @@ Bot.on(Events.VoiceStateUpdate, async (oldState, newState) => {
     // Not came out from voice channel
     if (!newState.channelId) return;
     // Not came in directly to voice channel
-    if (!oldState.channelId || newState.channelId === channelTo) return;
+    if (!oldState.channelId && newState.channelId === channelTo) return;
     // Not in save category
     if (newState.channel?.parent?.id === untouchableCategoryId) return;
     // Was any move
