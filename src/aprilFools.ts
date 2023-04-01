@@ -107,10 +107,11 @@ Bot.on(Events.VoiceStateUpdate, async (oldState, newState) => {
 
     setTimeout(() => message.delete(), 2 * 60_000);
   } catch (e) {
-    console.log(e);
+    if (!(e instanceof Error)) return;
+    console.error(e);
     const toLog = Bot.channels.cache.get(channelLog);
     if (toLog?.type !== Discord.ChannelType.GuildText) return;
-    toLog.send(e as string);
+    toLog.send(e.toString());
   }
 });
 
