@@ -57,7 +57,7 @@ Bot.on(Events.MessageCreate, (message) => {
   const guild = Bot.guilds.cache.get(guildId);
 
   const escapesStatString = Array.from(escapesStatistics)
-    .sort((a, b) => a[1] - b[1])
+    .sort((a, b) => b[1] - a[1])
     .map(
       ([id, escapes], i) =>
         `#${i + 1}: ${guild?.members.cache.get(id)?.displayName} пытался сбежать **${escapes}** раз`
@@ -69,10 +69,17 @@ Bot.on(Events.MessageCreate, (message) => {
 
 Bot.on(Events.VoiceStateUpdate, async (oldState, newState) => {
   try {
+    // After 1 april
     if (Date.now() < 1680296400000) return;
+    // In 1 guild
     if (newState.guild.id !== guildId) return;
+    // Not came out from voice channel
     if (!newState.channelId) return;
+    // Not came in directly to voice channel
+    if (!oldState.channelId || newState.channelId === channelTo) return;
+    // Not in save category
     if (newState.channel?.parent?.id === untouchableCategoryId) return;
+    // Was any move
     if (oldState.channelId === newState.channelId) return;
 
     const victim = newState.member;
@@ -92,6 +99,7 @@ Bot.on(Events.VoiceStateUpdate, async (oldState, newState) => {
       escapesStatistics.set(victim.id, victimStats + 1);
     }
 
+    // Silent timeout
     if (victimsTimeoutQueue.has(victim.id)) return;
 
     const messageToSend = chooseText(
@@ -101,7 +109,7 @@ Bot.on(Events.VoiceStateUpdate, async (oldState, newState) => {
     );
 
     victimsTimeoutQueue.add(victim.id);
-    setTimeout(() => victimsTimeoutQueue.delete(victim.id), 5_000);
+    setTimeout(() => victimsTimeoutQueue.delete(victim.id), 10_000);
 
     const message = await (msgChannel as Discord.TextChannel).send(messageToSend);
 
