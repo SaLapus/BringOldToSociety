@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import path from "node:path";
 
 import * as Discord from "discord.js";
 import { Events, GatewayIntentBits } from "discord.js";
@@ -29,14 +30,20 @@ const channelLog = process.env.CHANNEL_LOG!;
 
 const byNravId = process.env.BYNRAV_ID!;
 
-const escapesMap = JSON.parse(fs.readFileSync("./data/escapesStats.json", "utf-8"));
+const escapesMap = JSON.parse(
+  fs.readFileSync(path.join(__dirname, "../data/escapesStats.json"), "utf-8")
+);
 
 const victimsTimeoutQueue = new Set<string>();
 const escapesStatistics = new Map<string, number>(escapesMap);
 
 setInterval(
   () =>
-    fs.writeFileSync("./data/escapesStats.json", JSON.stringify([...escapesStatistics]), "utf-8"),
+    fs.writeFileSync(
+      path.join(__dirname, "../data/escapesStats.json"),
+      JSON.stringify([...escapesStatistics]),
+      "utf-8"
+    ),
   5 * 6_000
 );
 

@@ -8,12 +8,13 @@
     "run": "node ./js/bot.js"
   },
   "keywords": [],
-  "author": "",
+  "author": "SaLapus",
   "license": "ISC",
   "dependencies": {
     "discord.js": "^14.8.0",
-    "dotenv": "^16.0.3",
-    "ts-node": "^10.9.1",
+    "dotenv": "^16.0.3"
+  },
+  "devDependencies": {
     "typescript": "^4.9.5"
   }
 }
